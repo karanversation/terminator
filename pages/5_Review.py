@@ -9,6 +9,7 @@ import streamlit as st
 
 from db import init_db, update_category, get_uncategorized
 from utils import format_inr
+from processors.categorizer_llm import categorize_batch_llm
 
 st.header("Category Review")
 
@@ -54,6 +55,29 @@ if df_uncategorized.empty:
 st.metric("Transactions needing review", len(df_uncategorized))
 st.markdown("---")
 
+# Explicit trigger for LLM suggestions (dropdown only; user saves explicitly)
+st.subheader("🤖 AI category suggestions")
+st.caption("Get AI-suggested categories for the dropdowns below. You can edit any suggestion and click **Save corrections** to persist.")
+if st.button("Suggest categories with AI", type="secondary"):
+    desc_col = 'description' if 'description' in df_uncategorized.columns else 'raw_description'
+    unique_descs = df_uncategorized[desc_col].dropna().unique().tolist()
+    if unique_descs:
+        results = categorize_batch_llm(unique_descs, ALL_CATEGORIES)
+        suggestions = {}
+        for r in results:
+            if isinstance(r, dict) and r.get('confidence', 0) >= 0.7 and r.get('category') and r.get('category') != 'Miscellaneous':
+                suggestions[r['description']] = r['category']
+        if suggestions:
+            st.session_state['review_ai_suggestions'] = suggestions
+            st.success(f"Filled dropdowns for **{len(suggestions)}** unique description(s). Review and click **Save corrections** to save.")
+        else:
+            st.info("No high-confidence suggestions returned. (Check `OPENAI_API_KEY` or try again.)")
+        st.rerun()
+    else:
+        st.warning("No descriptions to suggest for.")
+
+st.markdown("---")
+
 # Build an editable form
 st.subheader("Review & Correct Categories")
 st.caption("Select the correct category for each transaction, then click **Save corrections**.")
@@ -78,6 +102,10 @@ with st.form("review_form"):
         amount = row.get('amount', 0)
         txn_type = row.get('type', '')
         current_cat = row.get('category', 'Miscellaneous') or 'Miscellaneous'
+        # Use AI suggestion for dropdown default if we have one for this description
+        ai_suggestions = st.session_state.get('review_ai_suggestions') or {}
+        default_cat = ai_suggestions.get(norm_desc) or ai_suggestions.get(raw_desc) or current_cat
+        default_idx = ALL_CATEGORIES.index(default_cat) if default_cat in ALL_CATEGORIES else len(ALL_CATEGORIES) - 1
         date_str = pd.to_datetime(row['date']).strftime('%d %b %Y') if 'date' in row else ''
 
         col1, col2 = st.columns([3, 2])
@@ -89,7 +117,6 @@ with st.form("review_form"):
                 unsafe_allow_html=True,
             )
         with col2:
-            default_idx = ALL_CATEGORIES.index(current_cat) if current_cat in ALL_CATEGORIES else len(ALL_CATEGORIES) - 1
             new_cat = st.selectbox(
                 "Category",
                 options=ALL_CATEGORIES,
@@ -115,6 +142,8 @@ if submitted:
             update_category(conn, txn_id, new_cat, source='manual')
             saved += 1
 
+    if 'review_ai_suggestions' in st.session_state:
+        del st.session_state['review_ai_suggestions']
     if saved:
         st.success(f"Saved {saved} correction(s). Refresh the page to see updated results.")
         # Invalidate cached data so main page reloads fresh

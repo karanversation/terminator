@@ -1,6 +1,6 @@
 """
-LLM-based transaction categorizer using Claude Haiku.
-Falls back to rule-based categorization if ANTHROPIC_API_KEY is not set.
+LLM-based transaction categorizer using OpenAI (gpt-5.2).
+Falls back to rule-based categorization if OPENAI_API_KEY is not set.
 Results are cached in the DB by normalized description to avoid repeat calls.
 """
 
@@ -12,6 +12,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 _BATCH_SIZE = 50
+_OPENAI_MODEL = "gpt-5.2"
 
 
 def _get_all_categories() -> list[str]:
@@ -48,25 +49,25 @@ def categorize_batch_llm(
     categories: Optional[list[str]] = None,
 ) -> list[dict]:
     """
-    Categorize a batch of transaction descriptions using Claude Haiku.
+    Categorize a batch of transaction descriptions using OpenAI.
     Returns a list of dicts: [{description, category, confidence}].
-    Falls back to rule-based if ANTHROPIC_API_KEY is not set.
+    Falls back to rule-based if OPENAI_API_KEY is not set.
     """
     if categories is None:
         categories = _get_all_categories()
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        logger.info("ANTHROPIC_API_KEY not set — using rule-based fallback")
+        logger.info("OPENAI_API_KEY not set — using rule-based fallback")
         return _rule_based_fallback(descriptions)
 
     try:
-        import anthropic
+        from openai import OpenAI
     except ImportError:
-        logger.warning("anthropic package not installed — using rule-based fallback")
+        logger.warning("openai package not installed — using rule-based fallback")
         return _rule_based_fallback(descriptions)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = OpenAI(api_key=api_key)
     results = []
 
     # Process in batches
@@ -79,7 +80,7 @@ def categorize_batch_llm(
 
 
 def _call_llm(client, descriptions: list[str], categories: list[str]) -> list[dict]:
-    """Call Claude Haiku with a single batch."""
+    """Call OpenAI with a single batch."""
     cat_list = ", ".join(categories)
     txn_list = json.dumps([{"description": d} for d in descriptions], ensure_ascii=False)
 
@@ -98,12 +99,12 @@ Transactions:
 Return JSON array: [{{"description": "...", "category": "...", "confidence": 0.0}}]"""
 
     try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+        response = client.chat.completions.create(
+            model=_OPENAI_MODEL,
             max_tokens=2048,
             messages=[{"role": "user", "content": prompt}],
         )
-        text = message.content[0].text.strip()
+        text = response.choices[0].message.content.strip()
 
         # Extract JSON array from response
         start = text.find('[')

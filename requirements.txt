@@ -3,5 +3,5 @@ pandas
 plotly
 openpyxl
 xlrd==2.0.1
-anthropic
+openai
 pyyaml

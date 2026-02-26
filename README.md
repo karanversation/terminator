@@ -153,11 +153,22 @@ EXPENSE_CATEGORY_RULES = {
 ### Adding New Payment Methods
 Modify the `identify_payment_method()` function in `processors/categorizer.py` to recognize additional payment sources.
 
+### LLM-assisted categorization (optional)
+The Review page can use OpenAI to suggest categories for uncategorized or Miscellaneous transactions. Set your API key in the environment before running the app:
+
+```bash
+export OPENAI_API_KEY='your-openai-api-key'
+streamlit run Home.py
+```
+
+If `OPENAI_API_KEY` is not set, the app falls back to rule-based categorization only.
+
 ## Data Privacy
 
 - All data processing happens locally on your machine
-- Transaction data is stored in a local SQLite database; no data is sent to external servers
+- Transaction data is stored in a local SQLite database
 - Your source statement files remain in your local `source_files/` directory
+- **LLM categorization**: If you set `OPENAI_API_KEY`, transaction descriptions are sent to OpenAI’s API to suggest categories; otherwise no data is sent to external servers
 
 ## Tips
 
@@ -192,7 +203,7 @@ Modify the `identify_payment_method()` function in `processors/categorizer.py` t
 - openpyxl
 - xlrd==2.0.1
 - pyyaml
-- anthropic (optional, for LLM-assisted categorization)
+- openai (optional, for LLM-assisted categorization)
 
 ## License
 
