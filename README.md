@@ -96,7 +96,7 @@ streamlit run main.py
 ### HDFC Credit Card Statements
 - Format: CSV with `~` delimiter
 - Filename pattern: `*Billedstatements*.csv`
-- Distinguishes between Diners Black (2508) and Regalia (6598)
+- Distinguishes between different credit cards
 
 ### HDFC Savings Account
 - Format: TXT with fixed-width columns
