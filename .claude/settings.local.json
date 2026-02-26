@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source:*)",
+      "Bash(source venv/bin/activate && python -c \"\nfrom db import init_db, get_uncategorized\nconn = init_db\\(\\)\ndf = get_uncategorized\\(conn\\)\nprint\\(df[['raw_description','type','amount']].sort_values\\('amount', ascending=False\\).to_string\\(\\)\\)\nconn.close\\(\\)\n\" 2>/dev/null)"
+    ]
+  }
+}

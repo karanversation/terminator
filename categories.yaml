@@ -1,0 +1,670 @@
+##############################################################################
+# categories.yaml
+# Defines all expense and income categories with keyword/pattern rules.
+# Replaces the Python dicts in config.py.
+# Patterns starting with "r:" are treated as regex (case-insensitive).
+##############################################################################
+
+expense_categories:
+
+  Grocery & Supplies:
+    keywords:
+      - blinkit
+      - bigbasket
+      - grofers
+      - jiomart
+      - dunzo
+      - milk basket
+      - "nature's basket"
+      - more supermarket
+      - avenue supermarts
+      - reliance fresh
+      - reliance smart
+      - dmart
+      - star bazaar
+      - spencer
+      - foodhall
+      - grocery
+      - supermarket
+      - provisions
+      - supplies
+      - kirana
+    patterns:
+      - "r:zepto\\s*(marketplace|now)?"
+
+  Food & Dining:
+    keywords:
+      - truffles hospitality
+      - salt restaurant
+      - carnatic cafe
+      - pind balluchi
+      - bade miya
+      - beejapuri dairy
+      - sinoel foods
+      - social  noida
+      - social
+      - blue tokai
+      - bikanervala
+      - costa coffee
+      - cooks corner
+      - avocado greens
+      - connaught plaza restau
+      - flo at church
+      - glued
+      - fresh to home
+      - freshtohome
+      - uber eats
+      - razorpay licious
+      - zomato
+      - swiggy
+      - dineout
+      - licious
+      # Eternal Limited = parent company of Zomato & Blinkit (listed since Jan 2025)
+      - eternal
+      - mcdonald
+      - domino
+      - starbucks
+      - smoor
+      - mithaas
+      - restaurant
+      - pizza
+      - burger
+      - bakery
+      - cafe
+      - coffee
+      - dining
+      - food
+      - kfc
+      - chai
+      - tea
+      - sweets
+
+  Transportation:
+    keywords:
+      - gaurs energy station
+      - essar saroorpur fillin
+      - filling station
+      - filling point
+      - petrol pump
+      - gaurs energy
+      - hp petrol
+      - indian oil
+      - essar
+      - kailash mum cab
+      - vishesh kumar
+      - sabzar ahmad
+      - mohd  haroon
+      - gaurav kumar
+      - kalpana rani
+      - blu smart
+      - ubertrip
+      - olacabs
+      - rapido
+      - fastag
+      - parking
+      - diesel
+      - petrol
+      - fuel
+      - metro
+      - toll
+      - uber
+      - taxi
+      - ola
+      - cab
+    patterns:
+      - "r:(om sai|shriom|rathee)\\s*filling\\s*(station|point)?"
+      - "r:grab[\\*\\s]?"
+
+  Shopping:
+    keywords:
+      - vr precision optics
+      - amazon
+      - flipkart
+      - myntra
+      - ajio
+      - meesho
+      - westside
+      - tata cliq
+      - decathlon
+      - mall
+      - shoppers
+      - reliance
+      - smart baby
+      - titan
+      - dyson
+      - apple
+      - samsung
+      - croma
+      - vijay sales
+      - retail
+      - lifestyle
+      - pantaloons
+      - max fashion
+      - h&m
+      - zara
+      - uniqlo
+      - googleplay
+      - google play
+      - playstore
+      - app store
+      - optics
+      - optical
+      - eyewear
+
+  Utilities & Bills:
+    keywords:
+      - billdeskpg.npcl
+      - noidapower billdesk
+      - noidapower
+      - noida power
+      - upi-indraprastha gas
+      - billdeskpg.indr
+      - indraprastha gas
+      - electricity bill
+      - power bill
+      - fastag auto sweep
+      - fastag
+      - crown honda
+      - service center
+      - vehicle service
+      - car service
+      - me dc si
+      - youtubegoogle
+      - netflix
+      - prime
+      - hotstar
+      - spotify
+      - youtube
+      - playstation
+      - airtel
+      - vodafone
+      - spaybbps
+      - broadband
+      - internet
+      - electricity
+      - recharge
+      - utility
+      - mobile
+      - water
+      - jio
+      - gas
+      - vi
+      - society maintenance
+    patterns:
+      - "r:upi-n(oida power corporat|pcl-paytm)"
+      - "r:cloud4things(esb)?"
+      - "r:tata\\s*play(fiber)?"
+      - "r:billdeskpg\\.appleservi|upi-apple services"
+
+  Rent:
+    keywords:
+      - upi-frequip rentals
+      - frequip rentals
+      - appliance rental
+      - upi-mygate
+      - mygate.razorpay
+      - mygate.paytm
+      - upi-vivish technologies
+      - vivish technologies
+      - upi-avalon rangoli
+      - avalonrangoli
+      - avalon
+      - rent
+      - house rent
+      - maintenance
+      - sayall
+      - imps-521511178925-sayall
+
+  Healthcare:
+    keywords:
+      - osho dhyan mandir
+      - dr anoop
+      - hospital
+      - clinic
+      - doctor
+      - medical
+      - pharmacy
+      - medicine
+      - health
+      - apollo
+      - max
+      - fortis
+      - tata memorial
+      - alora pharmacy
+      - specialist opd
+      - gynae
+      - meds
+      - kailash healthcare
+      - tata 1mg
+      - modern health
+      - dental
+      - diagnostic
+      - lab test
+      - pathology
+      - uma medicare
+      - salon
+      - spa
+      - gym
+      - fitness
+      - yoga
+      - personal care
+      - grooming
+      - wellness
+      - beauty
+      - cosmetics
+      - lakme
+      - nykaa
+      - mamaearth
+      - the body shop
+      - haircut
+      - fittr
+      - pharmeasy
+      - netmeds
+      - medlife
+      - meditation
+      - dhyan
+    patterns:
+      - "r:(dr)?sudhir\\s*hebbar"
+      - "r:cult(\\.)?fit"
+
+  Travel:
+    keywords:
+      - sanjay gupta
+      - mindways
+      - atlys
+      - visa services
+      - visa fee
+      - visa application
+      - vfsglobal
+      - vfs global
+      - ibibo group
+      - goibibo
+      - makemytrip
+      - cleartrip
+      - flight
+      - hotel
+      - airbnb
+      - oyo
+      - booking
+      - agoda
+      - yatra
+      - taj
+      - le travenue
+      - airport
+      - lounge
+      - loung    # truncated "lounge" seen in HDFC Diners bank statements
+      - enterprise rent-a-car
+      - car rental
+      - ritz carlton
+      - passport
+      - itc gardenia
+      - rcb front office
+      - airways
+      - duty free
+      - dcc transaction
+      - int.driversassociation
+      - bazpackers
+      - kickassgrassmarket
+      - foreign travel
+      - international
+      - virgin atlantic
+      - goibibo flight
+      - e-visa
+      - evisa
+      - airline
+      - british airways
+      - emirates
+      - indigo
+      - spicejet
+      - air india
+      - vistara
+      - etihad
+      - lufthansa
+      - klm
+      - qatar airways
+      - airindia
+      - heathrow
+      - euston
+      - train
+      - railway
+      - rail ticket
+    patterns:
+      - "r:ease\\s*my\\s*trip"
+      - "r:irctc(\\.easebuzz)?"
+
+  Investments:
+    keywords:
+      - standing instruction
+      - ach d- ppfas
+      - ppfas
+      - cams
+      - mutual fund
+      - sip
+      - stock
+      - equity
+      - trading
+      - zerodha
+      - groww
+      - upstox
+      - paytm money
+      - stable money
+      - shares
+      - demat
+      - nfl ncd
+      - cshfrest
+      - bond
+      - fixed deposit
+      - fd
+    patterns:
+      - "r:^si hga[ifgp]p\\d*"
+      - "r:(upi-)?zerodha broking"
+      - "r:(upi-)?stable broking"
+
+  Forex:
+    keywords:
+      - airwallex hong kong
+      - airwallex
+      - bookmyforex
+      - book my forex
+      - razpbookmyforex
+      - foreign exchange
+      - forex
+      - currency exchange
+      - inw
+      - usd
+      - eur
+      - gbp
+      - sgd
+      - fcy markup
+      - dcc
+      - foreign currency
+    patterns:
+      - "r:imps-\\d+-airwallex"
+      - "r:(razp)?book\\s*my\\s*forex"
+
+  Credit Card Payment:
+    keywords:
+      - billdkhdfccard
+      - zhdf6ur0a4yh10/billdkhdfccard
+      - upi-credclub
+      - upi-cred club
+      - credclub@icici
+      - cred.club@axisb
+      - ib billpay
+      - hdfceb
+      - billpay dr
+      - icicieb
+      - sbieb
+      - axieb
+      - imobile pay
+      - cc payment
+      - card payment
+      - redgiraffe
+      - red giraffe
+      - credit card
+
+  ATM Withdrawal:
+    keywords:
+      - nwd-
+      - atw-
+      - cash withdrawal
+      - atm withdrawal
+      - atm with
+      - cash wdl
+
+  Transfers:
+    keywords:
+      - yeida rps
+      - yeida refund
+      - neft dr-utib0003100-priya axis-sandoz
+      - priya axis-sandoz
+      - neft dr-icic0000192-mum icici-sandoz
+      - mum icici-sandoz
+      - imps-506721103532-abhilasha singh
+      - abhilasha singh
+      - sangeeta
+      - family transfer
+      - neft dr-
+      - rtgs dr-
+      - fund transfer
+      - upi transfer
+
+  Entertainment:
+    keywords:
+      - book my show
+      - bookmyshow
+      - movie
+      - cinema
+      - pvr
+      - inox
+      - theatre
+      - concert
+      - event
+      - game
+      - gaming
+      - steam
+      - playstation
+      - xbox
+      - nintendo
+      - paytm insider
+      - spotify
+
+  Taxes:
+    keywords:
+      - income tax
+      - tax payment
+      - itr
+      - tds
+      - gst
+      - advance tax
+      - tax filing
+      - cleartax
+      - tin nsdl
+      - cbdt
+
+  Insurance:
+    keywords:
+      - alyve health
+      - health insurance
+      - term insurance
+      - policy premium
+      - hdfc life
+      - icici pru
+      - bajaj allianz
+      - star health
+      - max life
+      - religare
+      - insurance
+      - premium
+      - policy
+      - alyve
+      - acko
+      - lic
+    patterns:
+      - "r:hdfc\\s*ergo(\\s*billdesk)?"
+      - "r:www\\s*acko\\s*com"
+
+  Education:
+    keywords:
+      - school
+      - college
+      - university
+      - tuition
+      - course
+      - udemy
+      - coursera
+      - learning
+      - education
+      - training
+      - certification
+      - books
+      - stationery
+      - admission fee
+      - tuition fee
+
+  Fees & Charges:
+    keywords:
+      - service charge
+      - processing fee
+      - late fee
+      - penalty
+      - convenience fee
+      - maintenance charge
+      - annual fee
+      - sms charge
+      - debit card fee
+      - non maintain
+      - card reissue
+      - reissue fee
+      - card charges
+      - fcy markup
+      - dc intl
+      - intl markup
+      - pos txn markup
+      - atm markup
+      - foreign txn fee
+      - cross currency
+      - markup fee
+
+  Salaries:
+    keywords:
+      - sanjeet kanojiya
+      - sanjeetkanojia
+      - salary payment
+      - employee salary
+      - staff payment
+      - wages
+
+  Miscellaneous: {}
+
+
+income_categories:
+
+  Salary:
+    keywords:
+      - eightfold ai
+      - gatewai integ
+      - salary
+      - salary credit
+      - credited salary
+      - credited sal
+      - sal credit
+      - income
+      - payroll
+      - monthly salary
+      - net salary
+      - salary transfer
+      - emoluments
+
+  Dividends:
+    keywords:
+      - ach c-
+      - dividend
+      - vedanta
+      - dividend credit
+      - sansera
+      - div
+      - dividend paid
+      - int div
+    patterns:
+      - "r:ach c-\\s*(vedanta|wipro|ircon|jubilant|oil and natural gas|pcbl|rec)\\s*(limited|ingrevia)?"
+      - "r:(apcotex|sansera engine)\\s*(ind\\s*)?div"
+
+  Interest:
+    keywords:
+      - credit interest
+      - int.pd
+      - nfl ncd iii-repay
+      - nfl ncd
+      - ach c- sbicard int
+      - interest paid
+      - int.paid
+      - interest credit
+      - interest earned
+      - savings interest
+      - fd interest
+      - int credit
+
+  Cashbacks & Rewards:
+    keywords:
+      - cashback
+      - cash back
+      - global value
+      - reward
+      - petro surcharge waiver
+      - surcharge waiver
+      - waiver
+      - points credit
+      - consolidated fcy markup
+    patterns:
+      - "r:(npci\\s*)?bhim\\s*(-)?cashback"
+
+  Refunds & Reversals:
+    keywords:
+      - refund
+      - reversal
+      - reversed
+      - return
+      - chargeback
+      - cancellation
+      - cancelled
+      - credit reversal
+      - tds refund
+      - income tax refund
+      - yeida refund
+      - yeida rps
+      # Merchant credits = refunds/returns
+      - amazon
+      - blinkit
+      - swiggy
+      - zomato
+      - eternal
+      - freshtohome
+      - fresh to home
+      - fittr
+      - enterprise rent
+      # Insurance claim credits
+      - icici lombard
+      - imagine healthfin
+      - hdfc ergo
+      # Bill payment reversals
+      - bbps payment received
+
+  Rent Received:
+    keywords:
+      - pramod baghel
+      - pramodbaghel
+      - rent received
+      - rental income
+
+  Forex:
+    keywords:
+      - imps-500616750132-airwallex
+      - imps-502019675057-airwallex
+      - imps-502721772951-airwallex
+      - imps-503422989394-airwallex
+      - imps-504806859272-airwallex
+      - airwallex hong kong
+      - imps-airwallex
+      - bookmyforex
+      - book my forex
+      - razpbookmyforex
+      - foreign exchange
+      - forex
+      - currency exchange
+      - airwallex
+      - inw     # INW = International Wire — incoming forex credit
+      - fcy markup
+
+  Transfers:
+    keywords:
+      - neft cr-
+      - imps cr-
+      - rtgs cr-
+      - upi cr-
+      - fund transfer
+      - neft-
+      - rtgs-
+      - transfer credit
+
+  Miscellaneous: {}
