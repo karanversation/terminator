@@ -66,16 +66,21 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Place your transaction files in the `source_files/` directory:
-   - HDFC Credit Card statements (CSV format with `Billedstatements` in filename)
-   - Bank statements (TXT, XLS, or CSV formats)
+1. Create the `source_files/` directory and **organize statements in subfolders** by source:
+   - `source_files/hdfc_cc/` — HDFC Credit Card statements (CSV)
+   - `source_files/hdfc_savings/` — HDFC Savings Account (TXT)
+   - `source_files/icici_cc/` — ICICI Credit Card (CSV)
+   - `source_files/icici_savings/` — ICICI Savings (CSV or TXT)
+   - `source_files/sbi/` — SBI statements (CSV)
+
+   Only `.csv` and `.txt` files inside these folders are loaded.
 
 2. Run the Streamlit app:
 ```bash
-streamlit run main.py
+streamlit run Home.py
 ```
 
-3. Open your browser (usually auto-opens) to view the dashboard
+3. Open your browser (usually auto-opens) to view the dashboard.
 
 4. Use the sidebar filters to:
    - Select date ranges
@@ -84,59 +89,75 @@ streamlit run main.py
    - Select payment methods
    - Set amount ranges
 
-5. Explore different tabs:
-   - **Overview**: Get a high-level summary with key metrics and charts
-   - **Monthly Analysis**: View month-by-month trends and breakdowns
-   - **Annual Analysis**: Compare yearly expenses and quarterly patterns
-   - **Category Analysis**: Deep dive into spending by category
-   - **Transaction Details**: Search and browse individual transactions
+5. Explore the pages via the sidebar:
+   - **Home**: Summary metrics and source files browser
+   - **Overview**: High-level summary with key metrics and charts
+   - **Monthly**: Month-by-month trends and breakdowns
+   - **Categories**: Spending by category
+   - **Transactions**: Search and browse individual transactions
+   - **Review**: Review and adjust categorizations
 
 ## File Format Support
 
-### HDFC Credit Card Statements
-- Format: CSV with `~` delimiter
-- Filename pattern: `*Billedstatements*.csv`
-- Distinguishes between different credit cards
+Statements must be placed in the correct subfolder under `source_files/` (see Usage). Supported formats:
 
-### HDFC Savings Account
+### File naming
+
+- **No strict filename rule**: Any file with extension `.csv` or `.txt` inside the right subfolder is loaded. You can name files however you like (e.g. `jan2024.csv`, `statement.csv`).
+- **HDFC Credit Card (two cards)**: If you have both Diners Black and Regalia, the app identifies the card by the **filename**: include `2508` somewhere in the filename for Diners Black (e.g. `HDFC_Billedstatements_2508_Jan24.csv`). Files without `2508` are treated as Regalia.
+- **Conventions** (optional; your bank may use similar names):
+  - HDFC CC: often `*Billedstatements*.csv`
+  - HDFC Savings: often `Acct_Statement*.txt`
+  - ICICI: often `OpTransactionHistory*.csv` or `ICICI*.csv` after export
+  - SBI: often `SBI*.csv` after export
+
+### HDFC Credit Card (`source_files/hdfc_cc/`)
+- Format: CSV with `~` delimiter
+- Diners Black vs Regalia: include `2508` in the filename for Diners Black (see File naming above).
+
+### HDFC Savings (`source_files/hdfc_savings/`)
 - Format: TXT with fixed-width columns
 - Filename pattern: `Acct_Statement*.txt`
 
-### ICICI Bank Statements
-- Format: XLS
-- Filename pattern: `OpTransactionHistory*.xls`
+### ICICI Credit Card (`source_files/icici_cc/`)
+- Format: CSV
+- Place exported ICICI credit card statement CSVs in this folder.
 
-### SBI Bank Statements
-- Format: CSV exported from XLS
+### ICICI Savings (`source_files/icici_savings/`)
+- Format: CSV or TXT (e.g. exported from XLS)
+- Filename pattern: `OpTransactionHistory*.xls` exported to CSV, or `ICICI*.csv`
+
+### SBI (`source_files/sbi/`)
+- Format: CSV (e.g. exported from XLS)
 - Filename pattern: `SBI*.csv`
-
-### ICICI Bank Statements
-- Format: CSV exported from XLS
-- Filename pattern: `ICICI*.csv`
-- Note: If CSV export doesn't work properly, the ICICI statement can be manually imported or the parser can be adjusted based on your specific format
 
 ## Customization
 
 ### Adding New Categories
-Edit the `CATEGORY_RULES` dictionary in `main.py`:
+Edit the category rules in `config.py`:
+- **Expenses**: `EXPENSE_CATEGORY_RULES`
+- **Income**: `INCOME_CATEGORY_RULES`
+
+Keywords are matched case-insensitively; patterns starting with `r:` are treated as regex. Optionally, you can maintain `categories.yaml` and ensure the app loads from it if that flow is enabled.
 
 ```python
-CATEGORY_RULES = {
+EXPENSE_CATEGORY_RULES = {
     'Your Category': [
-        'keyword1', 'keyword2', 'keyword3'
+        'keyword1', 'keyword2',
+        'r:regex_pattern',  # optional regex
     ],
-    # ... other categories
+    # ...
 }
 ```
 
 ### Adding New Payment Methods
-Modify the `identify_payment_method()` function in `main.py` to recognize additional payment sources.
+Modify the `identify_payment_method()` function in `processors/categorizer.py` to recognize additional payment sources.
 
 ## Data Privacy
 
 - All data processing happens locally on your machine
-- No data is sent to external servers
-- Your transaction files remain in your local `source_files/` directory
+- Transaction data is stored in a local SQLite database; no data is sent to external servers
+- Your source statement files remain in your local `source_files/` directory
 
 ## Tips
 
@@ -149,13 +170,14 @@ Modify the `identify_payment_method()` function in `main.py` to recognize additi
 ## Troubleshooting
 
 ### If transactions aren't loading:
-- Check file formats match supported types
-- Ensure files are in the `source_files/` directory
-- Check the error messages in the expandable warning section
+- Ensure files are in the correct **subfolder** under `source_files/` (e.g. `hdfc_cc`, `icici_savings`)
+- Only `.csv` and `.txt` files are loaded
+- Check that file formats match the supported types for that folder
+- Check the expandable warning section in the app for parser errors
 
 ### If categories seem wrong:
-- Update the `CATEGORY_RULES` dictionary with more specific keywords
-- Keywords are matched case-insensitively
+- Update `EXPENSE_CATEGORY_RULES` or `INCOME_CATEGORY_RULES` in `config.py` with more specific keywords
+- Keywords are matched case-insensitively; use `r:regex` for pattern-based rules
 
 ### If the app is slow:
 - Consider filtering by date range to reduce data volume
@@ -168,7 +190,9 @@ Modify the `identify_payment_method()` function in `main.py` to recognize additi
 - pandas
 - plotly
 - openpyxl
-- xlrd
+- xlrd==2.0.1
+- pyyaml
+- anthropic (optional, for LLM-assisted categorization)
 
 ## License
 
