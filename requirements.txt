@@ -5,3 +5,5 @@ openpyxl
 xlrd==2.0.1
 openai
 pyyaml
+msoffcrypto-tool
+pdfplumber

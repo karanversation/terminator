@@ -70,7 +70,6 @@ def categorize_batch_llm(
     client = OpenAI(api_key=api_key)
     results = []
 
-    # Process in batches
     for i in range(0, len(descriptions), _BATCH_SIZE):
         batch = descriptions[i: i + _BATCH_SIZE]
         batch_results = _call_llm(client, batch, categories)
@@ -79,8 +78,8 @@ def categorize_batch_llm(
     return results
 
 
-def _call_llm(client, descriptions: list[str], categories: list[str]) -> list[dict]:
-    """Call OpenAI with a single batch."""
+def _call_llm(client, descriptions: list, categories: list) -> list:
+    """Call OpenAI with a single batch. Raises on API error (caller handles)."""
     cat_list = ", ".join(categories)
     txn_list = json.dumps([{"description": d} for d in descriptions], ensure_ascii=False)
 
@@ -98,26 +97,19 @@ Transactions:
 
 Return JSON array: [{{"description": "...", "category": "...", "confidence": 0.0}}]"""
 
-    try:
-        response = client.chat.completions.create(
-            model=_OPENAI_MODEL,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.choices[0].message.content.strip()
+    response = client.chat.completions.create(
+        model=_OPENAI_MODEL,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = response.choices[0].message.content.strip()
 
-        # Extract JSON array from response
-        start = text.find('[')
-        end = text.rfind(']') + 1
-        if start == -1 or end == 0:
-            raise ValueError("No JSON array found in response")
+    start = text.find('[')
+    end = text.rfind(']') + 1
+    if start == -1 or end == 0:
+        raise ValueError(f"No JSON array in response: {text[:200]}")
 
-        parsed = json.loads(text[start:end])
-        return parsed
-
-    except Exception as e:
-        logger.error(f"LLM categorization failed: {e}")
-        return _rule_based_fallback(descriptions)
+    return json.loads(text[start:end])
 
 
 def _rule_based_fallback(descriptions: list[str]) -> list[dict]:

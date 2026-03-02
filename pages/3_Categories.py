@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils import format_inr
+from utils import format_inr, render_txn_table
 
 TABLE_PIXEL_HEIGHT = 40
 LARGE_TABLE_HEIGHT = 1200
@@ -20,13 +20,23 @@ if df_filtered is None or df_filtered.empty:
 
 col1, col2 = st.columns(2)
 
+_STATS_SORT_OPTS = ["Total (High→Low)", "Total (Low→High)", "Average (High→Low)", "Count (High→Low)", "Category (A→Z)"]
+
+def _sort_stats(df, order):
+    if order == "Total (High→Low)":   return df.sort_values('Total', ascending=False)
+    if order == "Total (Low→High)":   return df.sort_values('Total', ascending=True)
+    if order == "Average (High→Low)": return df.sort_values('Average', ascending=False)
+    if order == "Count (High→Low)":   return df.sort_values('Count', ascending=False)
+    return df.sort_index()  # Category A→Z
+
 with col1:
     st.markdown("### 💸 Expense Categories")
     category_stats_debit = df_filtered[df_filtered['Type'] == 'Debit'].groupby('Category').agg(
         {'Amount': ['sum', 'mean', 'count']}
     ).round(2)
     category_stats_debit.columns = ['Total', 'Average', 'Count']
-    category_stats_debit = category_stats_debit.sort_values('Total', ascending=False)
+    exp_stats_sort = st.selectbox("Sort by", _STATS_SORT_OPTS, key="exp_stats_sort")
+    category_stats_debit = _sort_stats(category_stats_debit, exp_stats_sort)
     st.dataframe(
         category_stats_debit,
         use_container_width=True,
@@ -44,7 +54,8 @@ with col2:
         {'Amount': ['sum', 'mean', 'count']}
     ).round(2)
     category_stats_credit.columns = ['Total', 'Average', 'Count']
-    category_stats_credit = category_stats_credit.sort_values('Total', ascending=False)
+    dep_stats_sort = st.selectbox("Sort by", _STATS_SORT_OPTS, key="dep_stats_sort")
+    category_stats_credit = _sort_stats(category_stats_credit, dep_stats_sort)
     st.dataframe(
         category_stats_credit,
         use_container_width=True,
@@ -134,11 +145,13 @@ with col2:
 st.markdown("---")
 st.subheader("All Transactions by Category")
 
-cat_sort_order = st.selectbox(
-    "Sort by",
-    ["Amount (High)", "Amount (Low)", "Date (Newest)", "Date (Oldest)"],
-    key="cat_sort",
-)
+_TXN_SORT_OPTS = ["Amount (High→Low)", "Amount (Low→High)", "Date (Newest)", "Date (Oldest)"]
+
+def _sort_txn(df, order):
+    if order == "Amount (High→Low)": return df.sort_values('Amount', ascending=False)
+    if order == "Amount (Low→High)": return df.sort_values('Amount', ascending=True)
+    if order == "Date (Newest)":     return df.sort_values('Date', ascending=False)
+    return df.sort_values('Date', ascending=True)
 
 expense_cat_transactions = (
     df_filtered[
@@ -156,17 +169,6 @@ income_cat_transactions = (
     else pd.DataFrame()
 )
 
-for df_trans in [expense_cat_transactions, income_cat_transactions]:
-    if not df_trans.empty:
-        if cat_sort_order == "Amount (High)":
-            df_trans.sort_values('Amount', ascending=False, inplace=True)
-        elif cat_sort_order == "Amount (Low)":
-            df_trans.sort_values('Amount', ascending=True, inplace=True)
-        elif cat_sort_order == "Date (Newest)":
-            df_trans.sort_values('Date', ascending=False, inplace=True)
-        else:
-            df_trans.sort_values('Date', ascending=True, inplace=True)
-
 col1, col2 = st.columns(2)
 
 with col1:
@@ -174,18 +176,10 @@ with col1:
         st.markdown(f"#### 💸 {selected_expense_category}")
         if not expense_cat_transactions.empty:
             st.write(f"**Total: {len(expense_cat_transactions)} transactions | {format_inr(expense_cat_transactions['Amount'].sum())}**")
-            display_expense_df = expense_cat_transactions[['Date', 'Description', 'Amount', 'Payment Method', 'Source']].copy()
-            display_expense_df['Date'] = pd.to_datetime(display_expense_df['Date'])
-            display_expense_df['Amount'] = display_expense_df['Amount'].apply(format_inr)
-            st.dataframe(
-                display_expense_df,
-                use_container_width=True,
-                hide_index=True,
-                height=LARGE_TABLE_HEIGHT,
-                column_config={
-                    "Date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
-                },
-            )
+            exp_cat_sort = st.selectbox("Sort by", _TXN_SORT_OPTS, key="exp_cat_sort")
+            sorted_expense = _sort_txn(expense_cat_transactions, exp_cat_sort)
+            render_txn_table(sorted_expense, ['Date', 'Description', 'Amount', 'Payment Method', 'Source'],
+                             height=LARGE_TABLE_HEIGHT)
         else:
             st.info("No transactions in this category")
 
@@ -194,17 +188,9 @@ with col2:
         st.markdown(f"#### 💵 {selected_income_category}")
         if not income_cat_transactions.empty:
             st.write(f"**Total: {len(income_cat_transactions)} transactions | {format_inr(income_cat_transactions['Amount'].sum())}**")
-            display_income_df = income_cat_transactions[['Date', 'Description', 'Amount', 'Payment Method', 'Source']].copy()
-            display_income_df['Date'] = pd.to_datetime(display_income_df['Date'])
-            display_income_df['Amount'] = display_income_df['Amount'].apply(format_inr)
-            st.dataframe(
-                display_income_df,
-                use_container_width=True,
-                hide_index=True,
-                height=LARGE_TABLE_HEIGHT,
-                column_config={
-                    "Date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
-                },
-            )
+            dep_cat_sort = st.selectbox("Sort by", _TXN_SORT_OPTS, key="dep_cat_sort")
+            sorted_income = _sort_txn(income_cat_transactions, dep_cat_sort)
+            render_txn_table(sorted_income, ['Date', 'Description', 'Amount', 'Payment Method', 'Source'],
+                             height=LARGE_TABLE_HEIGHT)
         else:
             st.info("No transactions in this category")

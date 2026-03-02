@@ -217,8 +217,8 @@ def identify_payment_method(source, description, file_name):
     if 'upi-' in desc_lower or 'upi ' in desc_lower:
         return 'UPI'
     
-    # ATM
-    if 'nwd-' in desc_lower or 'atm' in desc_lower or 'cash withdrawal' in desc_lower:
+    # ATM (ATW- / EAW- are HDFC ATM withdrawal codes)
+    if any(x in desc_lower for x in ['nwd-', 'atm', 'atw-', 'eaw-', 'cash withdrawal']):
         return 'ATM Withdrawal'
     
     # Direct transfers

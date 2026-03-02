@@ -6,21 +6,36 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils import format_inr
+from utils import format_inr, render_txn_table
 
 st.header("Overview")
 
 df_filtered = st.session_state.get("df_filtered")
+df_all = st.session_state.get("df_all")
 if df_filtered is None or df_filtered.empty:
-    st.info("No data loaded. Return to the home page.")
+    st.info("No data loaded.")
     st.stop()
+
+# --- Dataset stats row ---
+stat1, stat2, stat3 = st.columns(3)
+with stat1:
+    st.metric("Transactions", f"{len(df_all):,}")
+with stat2:
+    min_d = df_all["Date"].min().strftime("%d %b %Y")
+    max_d = df_all["Date"].max().strftime("%d %b %Y")
+    st.metric("Period", f"{min_d} – {max_d}")
+with stat3:
+    n_months = df_all["Month-Year"].nunique()
+    st.metric("Months", f"{n_months}")
+
+st.markdown("---")
 
 # Key metrics
 col1, col2, col3, col4 = st.columns(4)
 
 total_debit = df_filtered[df_filtered['Type'] == 'Debit']['Amount'].sum()
 total_credit = df_filtered[df_filtered['Type'] == 'Credit']['Amount'].sum()
-net_expense = total_debit - total_credit
+net_expense = total_credit - total_debit
 avg_debit = df_filtered[df_filtered['Type'] == 'Debit']['Amount'].mean()
 
 col1.metric("Total Expenses", format_inr(total_debit))
@@ -80,9 +95,22 @@ with col1:
         custom_data=['Amount_Formatted'],
     )
     fig_payment.update_traces(
-        hovertemplate='<b>%{y}</b><br>Amount=%{customdata[0]}<extra></extra>'
+        texttemplate='%{customdata[0]}',
+        textposition='outside',
+        hovertemplate='<b>%{y}</b><br>Amount=%{customdata[0]}<extra></extra>',
     )
+    fig_payment.update_layout(xaxis=dict(range=[0, payment_df['Amount'].max() * 1.25]))
     st.plotly_chart(fig_payment, use_container_width=True)
+
+    df_other_expenses = (
+        df_filtered[(df_filtered['Type'] == 'Debit') & (df_filtered['Payment Method'] == 'Other')]
+        .sort_values('Amount', ascending=False)
+        .copy()
+    )
+    if not df_other_expenses.empty:
+        with st.expander(f"'Other' expenses — {len(df_other_expenses)} transactions"):
+            render_txn_table(df_other_expenses, ['Date', 'Description', 'Amount', 'Category'],
+                             height=min(len(df_other_expenses) * 38 + 60, 500))
 
 with col2:
     st.subheader("💵 Deposits Overview")
@@ -136,8 +164,21 @@ with col2:
             custom_data=['Amount_Formatted'],
         )
         fig_income_payment.update_traces(
-            hovertemplate='<b>%{y}</b><br>Amount=%{customdata[0]}<extra></extra>'
+            texttemplate='%{customdata[0]}',
+            textposition='outside',
+            hovertemplate='<b>%{y}</b><br>Amount=%{customdata[0]}<extra></extra>',
         )
+        fig_income_payment.update_layout(xaxis=dict(range=[0, payment_income_df['Amount'].max() * 1.25]))
         st.plotly_chart(fig_income_payment, use_container_width=True)
+
+        df_other_credits = (
+            df_filtered[(df_filtered['Type'] == 'Credit') & (df_filtered['Payment Method'] == 'Other')]
+            .sort_values('Amount', ascending=False)
+            .copy()
+        )
+        if not df_other_credits.empty:
+            with st.expander(f"'Other' deposits — {len(df_other_credits)} transactions"):
+                render_txn_table(df_other_credits, ['Date', 'Description', 'Amount', 'Category'],
+                                 height=min(len(df_other_credits) * 38 + 60, 500))
     else:
         st.info("No deposit data available for the selected filters.")

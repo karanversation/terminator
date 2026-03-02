@@ -49,6 +49,69 @@ class HdfcSavingsParser(BaseParser):
             return df
         return _df_to_raw(df, self.account, self.account_type)
 
+    def get_closing_balance(self, filepath: Path):
+        """
+        Return (report_date, closing_balance) from the last transaction row.
+        The balance column is the rightmost numeric column in fixed-width format.
+        """
+        from datetime import date as date_type
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+
+            # Find separator line to determine column positions
+            separator_line = None
+            for line in lines:
+                if '--------' in line and 'Withdrawal' not in line:
+                    separator_line = line
+                    break
+
+            # Default balance column position
+            balance_col_start = 120
+            balance_col_end = 140
+
+            if separator_line:
+                dash_groups = []
+                in_dash = False
+                start_pos = 0
+                for i, char in enumerate(separator_line):
+                    if char == '-':
+                        if not in_dash:
+                            start_pos = i
+                            in_dash = True
+                    else:
+                        if in_dash:
+                            dash_groups.append((start_pos, i))
+                            in_dash = False
+                if in_dash:
+                    dash_groups.append((start_pos, len(separator_line)))
+                # Last group is the Balance column
+                if len(dash_groups) >= 1:
+                    balance_col_start, balance_col_end = dash_groups[-1]
+
+            date_pattern = re.compile(r'^\d{2}/\d{2}/\d{2,4}')
+            last_date = None
+            last_balance = None
+
+            for line in lines:
+                if date_pattern.match(line.strip()):
+                    try:
+                        date_str = line[:8].strip()
+                        parsed_date = pd.to_datetime(date_str, dayfirst=True, errors='coerce')
+                        balance_str = line[balance_col_start:balance_col_end].strip().replace(',', '')
+                        if balance_str and balance_str.replace('.', '').replace('-', '').isdigit():
+                            last_date = parsed_date
+                            last_balance = float(balance_str)
+                    except Exception:
+                        continue
+
+            if last_date is None or last_balance is None:
+                raise ValueError(f"Could not extract closing balance from {filepath.name}")
+
+            return last_date.date(), last_balance
+        except Exception as e:
+            raise ValueError(f"HDFC closing balance error ({filepath.name}): {e}")
+
 
 def _df_to_raw(df: pd.DataFrame, account: str, account_type: str) -> list:
     rows = []
@@ -60,6 +123,7 @@ def _df_to_raw(df: pd.DataFrame, account: str, account_type: str) -> list:
             type=str(row["Type"]),
             account=account,
             account_type=account_type,
+            raw_line=str(row.get("RawLine", "")),
         ))
     return rows
 
@@ -145,7 +209,8 @@ def parse_hdfc_cc_csv(filepath, account_override=None):
                 "Amount": amount,
                 "Type": "Credit" if is_credit else "Debit",
                 "Source": card_type,
-                "File": file_name
+                "File": file_name,
+                "RawLine": line,
             })
 
         df = pd.DataFrame(rows)
@@ -265,7 +330,8 @@ def parse_hdfc_savings_txt(filepath):
                         "Amount": amount,
                         "Type": typ,
                         "Source": "HDFC Savings Account",
-                        "File": os.path.basename(filepath)
+                        "File": os.path.basename(filepath),
+                        "RawLine": line.rstrip(),
                     })
                 except Exception as e:
                     continue

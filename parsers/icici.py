@@ -21,10 +21,41 @@ class IciciSavingsParser(BaseParser):
     account_type = "savings"
 
     def parse(self, filepath: Path) -> "Union[List[RawTransaction], str]":
-        df = parse_icici_csv(str(filepath))
+        suffix = Path(filepath).suffix.lower()
+        if suffix in ('.xls', '.xlsx'):
+            df = _parse_icici_as_excel(filepath)
+        else:
+            df = parse_icici_csv(str(filepath))
         if isinstance(df, str):
             return df
         return _df_to_raw(df, self.account, self.account_type)
+
+    def get_closing_balance(self, filepath: Path):
+        """Return (report_date, closing_balance) from the last valid transaction row."""
+        suffix = filepath.suffix.lower()
+        if suffix in ('.xls', '.xlsx'):
+            df = _parse_icici_as_excel(filepath)
+        else:
+            df = _read_icici_csv_as_df(filepath)
+        if isinstance(df, str):
+            raise ValueError(df)
+
+        for _, row in df[::-1].iterrows():
+            try:
+                date_str = str(row['Transaction Date']).strip()
+                if not date_str or date_str in ['nan', '', 'None']:
+                    continue
+                bal_val = row.get('_balance')
+                if bal_val is None or pd.isna(bal_val):
+                    continue
+                parsed_date = pd.to_datetime(date_str, dayfirst=True, errors='coerce')
+                if pd.isna(parsed_date):
+                    continue
+                return parsed_date.date(), float(bal_val)
+            except Exception:
+                continue
+
+        raise ValueError(f"Could not extract closing balance from {filepath.name}")
 
 
 class IciciCCParser(BaseParser):
@@ -48,8 +79,143 @@ def _df_to_raw(df: pd.DataFrame, account: str, account_type: str) -> list:
             type=str(row["Type"]),
             account=account,
             account_type=account_type,
+            raw_line=str(row.get("RawLine", "")),
         ))
     return rows
+
+
+def _find_icici_header_row_excel(filepath):
+    """Scan an ICICI XLS/XLSX to find the row index of the transaction header."""
+    raw = pd.read_excel(filepath, header=None)
+    for i, row in raw.iterrows():
+        vals = " ".join(str(v) for v in row if str(v) != 'nan')
+        if 'S No.' in vals and 'Transaction Date' in vals:
+            return i
+    return None
+
+
+def _parse_icici_as_excel(filepath):
+    """
+    Parse ICICI savings statement from XLS/XLSX.
+    Returns a DataFrame with Date, Description, Amount, Type, Source, File columns
+    plus a '_balance' column for closing balance extraction.
+    """
+    try:
+        header_row_idx = _find_icici_header_row_excel(filepath)
+        if header_row_idx is None:
+            return f"Failed to parse {os.path.basename(filepath)}: Header not found"
+
+        df = pd.read_excel(filepath, header=header_row_idx)
+        df.columns = [str(col).strip() for col in df.columns]
+
+        # Find balance column
+        balance_col = next(
+            (c for c in df.columns if 'balance' in c.lower()),
+            None
+        )
+
+        return _parse_icici_txn_rows(df, os.path.basename(filepath), balance_col)
+    except Exception as e:
+        return f"Failed to parse {os.path.basename(filepath)}: {e}"
+
+
+def _read_icici_csv_as_df(filepath):
+    """Read ICICI CSV and return a DataFrame with balance column attached."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        header_row_idx = None
+        for i, line in enumerate(lines):
+            if 'S No.' in line and 'Transaction Date' in line:
+                header_row_idx = i
+                break
+        if header_row_idx is None:
+            return f"Failed to parse {os.path.basename(filepath)}: Header not found"
+        df = pd.read_csv(filepath, skiprows=header_row_idx)
+        df.columns = [str(col).strip() for col in df.columns]
+        balance_col = next(
+            (c for c in df.columns if 'balance' in c.lower()),
+            None
+        )
+        return _parse_icici_txn_rows(df, os.path.basename(filepath), balance_col)
+    except Exception as e:
+        return f"Failed to parse {os.path.basename(filepath)}: {e}"
+
+
+def _parse_icici_txn_rows(df, filename, balance_col):
+    """
+    Common row-parsing logic for both CSV and XLS ICICI savings statements.
+    Returns a DataFrame with standard columns + '_balance' for closing balance use.
+    """
+    rows = []
+    for _, row in df.iterrows():
+        try:
+            s_no = str(row.get('S No.', '')).strip()
+            if not s_no or s_no in ['nan', '', 'None']:
+                continue
+
+            txn_date = str(row.get('Transaction Date', '')).strip()
+            if not txn_date or txn_date in ['nan', '', 'None']:
+                continue
+
+            description = str(row.get('Transaction Remarks', '')).strip()
+            if description == 'nan':
+                description = ''
+
+            withdrawal = 0.0
+            deposit = 0.0
+            for col in df.columns:
+                if 'withdrawal' in col.lower() and 'inr' in col.lower():
+                    try:
+                        val = row[col]
+                        if pd.notna(val) and float(val) > 0:
+                            withdrawal = float(val)
+                    except Exception:
+                        pass
+                elif 'deposit' in col.lower() and 'inr' in col.lower():
+                    try:
+                        val = row[col]
+                        if pd.notna(val) and float(val) > 0:
+                            deposit = float(val)
+                    except Exception:
+                        pass
+
+            if withdrawal == 0.0 and deposit == 0.0:
+                continue
+
+            amount = withdrawal if withdrawal > 0 else deposit
+            typ = "Debit" if withdrawal > 0 else "Credit"
+
+            bal = None
+            if balance_col:
+                try:
+                    bal = float(row[balance_col])
+                except Exception:
+                    pass
+
+            raw_line = ' | '.join(str(v) for v in row.values if str(v).strip() not in ('', 'nan', 'None', 'NaT'))
+            rows.append({
+                "Date": pd.to_datetime(txn_date, dayfirst=True, errors='coerce'),
+                "Transaction Date": txn_date,
+                "Description": description,
+                "Amount": amount,
+                "Type": typ,
+                "Source": "ICICI Savings Account",
+                "File": filename,
+                "_balance": bal,
+                "RawLine": raw_line,
+            })
+        except Exception:
+            continue
+
+    if not rows:
+        return f"Failed to parse {filename}: No valid transactions found"
+
+    result_df = pd.DataFrame(rows)
+    result_df = result_df[result_df['Date'].notna()]
+    if result_df.empty:
+        return f"Failed to parse {filename}: No valid dates found"
+    return result_df
 
 
 def parse_icici_csv(filepath):
@@ -265,13 +431,15 @@ def parse_icici_cc_csv(filepath):
                     if sign == 'CR':
                         txn_type = "Credit"
                 
+                raw_line = ' | '.join(str(v) for v in row.values if str(v).strip() not in ('', 'nan', 'None', 'NaT'))
                 rows.append({
                     "Date": pd.to_datetime(date_str, dayfirst=True, errors='coerce'),
                     "Description": description,
                     "Amount": amount_val,
                     "Type": txn_type,
                     "Source": f"ICICI Amazon Pay CC (ending {card_last_4})" if card_last_4 else "ICICI Amazon Pay CC",
-                    "File": os.path.basename(filepath)
+                    "File": os.path.basename(filepath),
+                    "RawLine": raw_line,
                 })
             except Exception as e:
                 # Skip problematic rows

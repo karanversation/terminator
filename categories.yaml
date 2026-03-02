@@ -241,6 +241,11 @@ expense_categories:
       - diagnostic
       - lab test
       - pathology
+      - ultrasound
+      - scan
+      - radiology
+      - xray
+      - x-ray
       - uma medicare
       - salon
       - spa

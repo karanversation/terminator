@@ -96,6 +96,8 @@ _MERCHANT_RULES: list[tuple[str, str]] = [
     (r'(?i)goibibo', 'Goibibo'),
     (r'(?i)cleartrip', 'Cleartrip'),
     (r'(?i)ease\s*my\s*trip|easemytrip', 'EaseMyTrip'),
+    # Salary / Employer
+    (r'(?i)gatewai', 'Gatewai Integrated Services'),
     # Finance
     (r'(?i)zerodha', 'Zerodha'),
     (r'(?i)groww', 'Groww'),

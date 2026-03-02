@@ -118,12 +118,12 @@ EXPENSE_CATEGORY_RULES = {
     ],
     'Healthcare': [
         # Specific doctors and healthcare providers
-        'osho dhyan mandir', 'r:(dr)?sudhir\s*hebbar', 'dr anoop',
+        'osho dhyan mandir', 'r:(dr)?sudhir\s*hebbar', 'dr anoop', 'ayushi madaan',
         # Hospitals and clinics
         'hospital', 'clinic', 'doctor', 'medical', 'pharmacy', 'medicine', 'health',
         'apollo', 'max', 'fortis', 'tata memorial', 'alora pharmacy', 'specialist opd',
         'gynae', 'meds', 'kailash healthcare', 'tata 1mg', 'modern health',
-        'dental', 'diagnostic', 'lab test', 'pathology', 'dr ', 'uma medicare',
+        'dental', 'diagnostic', 'lab test', 'pathology', 'ultrasound', 'scan', 'radiology', 'xray', 'x-ray', 'dr ', 'uma medicare',
         'salon', 'spa', 'gym', 'fitness', 'yoga', 'r:cult(\.)?fit',
         'personal care', 'grooming', 'wellness', 'beauty', 'cosmetics',
         'lakme', 'nykaa', 'mamaearth', 'the body shop', 'haircut', 'fittr',
@@ -151,7 +151,7 @@ EXPENSE_CATEGORY_RULES = {
     ],
     'Investments': [
         # Standing instructions and automatic investments (specific patterns from bank statements)
-        'r:^si hga[ifghp]p\w*',  # Matches: SI HGAIP, SI HGAFP, SI HGAGP, SI HGAHP with optional suffix
+        'r:^si hga[a-z]p\w*',  # Matches: SI HGAIP, SI HGAFP, SI HGAGP, SI HGAHP, SI HGAJP, SI HGAKP etc.
         'standing instruction',
         # Mutual fund investments (ACH Debit patterns)
         'ach d- ppfas', 'ppfas', 'cams',
@@ -191,7 +191,7 @@ EXPENSE_CATEGORY_RULES = {
     'Transfers': [
         # Specific transfer patterns (family, personal)
         'yeida rps', 'yeida refund',
-        'neft dr-utib0003100-priya axis-sandoz', 'priya axis-sandoz',
+        'neft dr-utib0003100-priya axis-sandoz', 'priya axis-sandoz', 'priya axis-utib',
         'neft dr-icic0000192-mum icici-sandoz', 'mum icici-sandoz',
         'imps-506721103532-abhilasha singh', 'abhilasha singh',
         'sangeeta', 'family transfer',

@@ -54,7 +54,7 @@ _LEGACY_PARSER_MAP = {
 }
 
 
-def _raw_txns_to_db_rows(raw_txns, normalizer=None) -> list:
+def _raw_txns_to_db_rows(raw_txns, normalizer=None, source_file: str = "") -> list:
     """Convert RawTransaction objects into dicts suitable for upsert_transactions."""
     rows = []
     for txn in raw_txns:
@@ -95,6 +95,8 @@ def _raw_txns_to_db_rows(raw_txns, normalizer=None) -> list:
             "category_source": "rule",
             "payment_method": payment_method,
             "month_year": month_year,
+            "source_file": txn.source_file or source_file,
+            "raw_line": txn.raw_line or "",
         })
     return rows
 
@@ -144,8 +146,19 @@ def load_all_transactions():
                 continue
 
             if result:
-                db_rows = _raw_txns_to_db_rows(result, normalizer=normalize)
+                db_rows = _raw_txns_to_db_rows(result, normalizer=normalize, source_file=file)
                 upsert_transactions(conn, db_rows)
+                # Backfill source_file and raw_line for rows inserted before these columns existed
+                backfill = [(r["source_file"] or file, r["raw_line"], r["id"]) for r in db_rows]
+                if backfill:
+                    conn.executemany(
+                        """UPDATE transactions
+                           SET source_file = CASE WHEN source_file IS NULL OR source_file = '' THEN ? ELSE source_file END,
+                               raw_line    = CASE WHEN raw_line    IS NULL OR raw_line    = '' THEN ? ELSE raw_line    END
+                           WHERE id = ?""",
+                        backfill,
+                    )
+                    conn.commit()
 
     # Re-run rule-based categorization on existing rows whose description may have
     # changed (e.g. normalizer was updated) or whose category is still Miscellaneous.
@@ -262,6 +275,8 @@ def _db_df_to_legacy(df: pd.DataFrame) -> pd.DataFrame:
     out['id'] = df['id']
     out['raw_description'] = df['raw_description']
     out['category_source'] = df['category_source']
+    out['source_file'] = df['source_file'].fillna('')
+    out['raw_line'] = df['raw_line'].fillna('') if 'raw_line' in df.columns else ''
 
     # Ensure Date is datetime
     out['Date'] = pd.to_datetime(out['Date'])

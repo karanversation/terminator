@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     category_source TEXT,
     payment_method  TEXT,
     month_year      TEXT,
+    source_file     TEXT DEFAULT '',
+    raw_line        TEXT DEFAULT '',
     created_at      TEXT DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_date       ON transactions(date);
@@ -39,7 +41,16 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)
-    conn.commit()
+    # Migrations: add columns to existing DBs
+    for col_ddl in [
+        "ALTER TABLE transactions ADD COLUMN source_file TEXT DEFAULT ''",
+        "ALTER TABLE transactions ADD COLUMN raw_line TEXT DEFAULT ''",
+    ]:
+        try:
+            conn.execute(col_ddl)
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
     return conn
 
 
@@ -62,11 +73,11 @@ def upsert_transactions(conn: sqlite3.Connection, rows: List[Dict]) -> int:
         INSERT OR IGNORE INTO transactions
             (id, date, description, raw_description, amount, type,
              account, account_type, category, category_source,
-             payment_method, month_year)
+             payment_method, month_year, source_file, raw_line)
         VALUES
             (:id, :date, :description, :raw_description, :amount, :type,
              :account, :account_type, :category, :category_source,
-             :payment_method, :month_year)
+             :payment_method, :month_year, :source_file, :raw_line)
         """,
         rows,
     )
