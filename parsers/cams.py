@@ -119,4 +119,7 @@ class CamsParser(BaseHoldingParser):
             return holdings
 
         except Exception as e:
-            return f"CAMS parser error ({filepath.name}): {e}"
+            msg = str(e) or type(e).__name__
+            if 'password' in msg.lower() or 'incorrect' in msg.lower() or not msg or msg in ('', 'None'):
+                msg = f"wrong password or encrypted (type={type(e).__name__}, detail={e!r})"
+            return f"CAMS parser error ({filepath.name}): {msg}"
